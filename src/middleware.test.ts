@@ -8,12 +8,16 @@ import { NextRequest } from "next/server";
 //                      i.e. the freshly *rotated* auth token. The whole point
 //                      of the test is that these must survive onto whatever
 //                      response the middleware returns — including redirects.
+// `mockIsSuperAdmin` — whether the profile row has is_super_admin=true.
+//                      Defaults to false (regular user) so existing tests
+//                      expecting /dashboard redirects remain correct.
 let mockUser: { id: string } | null = null;
 let refreshedCookies: Array<{
   name: string;
   value: string;
   options: Record<string, unknown>;
 }> = [];
+let mockIsSuperAdmin = false;
 
 vi.mock("@supabase/ssr", () => ({
   createServerClient: (
@@ -32,6 +36,19 @@ vi.mock("@supabase/ssr", () => ({
         return { data: { user: mockUser } };
       },
     },
+    // Stub the profile query used by the role-based routing rules.
+    // Returns { data: { is_super_admin: mockIsSuperAdmin } } so the
+    // middleware can branch on it without hitting a real database.
+    from: (_table: string) => ({
+      select: (_cols: string) => ({
+        eq: (_col: string, _val: string) => ({
+          maybeSingle: async () => ({
+            data: mockUser ? { is_super_admin: mockIsSuperAdmin } : null,
+            error: null,
+          }),
+        }),
+      }),
+    }),
   }),
 }));
 
@@ -43,6 +60,7 @@ beforeEach(() => {
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "anon-key";
   mockUser = null;
   refreshedCookies = [];
+  mockIsSuperAdmin = false;
 });
 
 afterEach(() => vi.clearAllMocks());

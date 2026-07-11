@@ -26,18 +26,17 @@ export default function Icon() {
           borderRadius: 6,
         }}
       >
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="#ffffff"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+        <span
+          style={{
+            color: "#ffffff",
+            fontSize: 13,
+            fontWeight: 700,
+            fontFamily: "sans-serif",
+            letterSpacing: "-0.5px",
+          }}
         >
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-        </svg>
+          Az
+        </span>
       </div>
     ),
     { ...size },

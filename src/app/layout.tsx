@@ -22,10 +22,10 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "wacrm",
-    template: "%s — wacrm",
+    default: "Autozee",
+    template: "%s — Autozee",
   },
-  description: "Self-hostable CRM template for WhatsApp.",
+  description: "Autozee — WhatsApp CRM",
   robots: {
     index: false,
     follow: false,
@@ -100,14 +100,17 @@ export default async function RootLayout({
       // children still surface.
       suppressHydrationWarning
     >
-      <head>
+      <body className="min-h-full bg-background text-foreground font-sans">
+        {/* beforeInteractive scripts are always injected into <head> by
+            Next.js regardless of where they appear in JSX — placing them
+            inside the explicit <head> block causes React 19 to emit a
+            "script tag in component" warning. Body placement is the
+            pattern shown in the Next.js docs and silences the warning. */}
         <Script
           id="theme-boot"
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }}
         />
-      </head>
-      <body className="min-h-full bg-background text-foreground font-sans">
         <NextIntlClientProvider messages={messages} locale={locale}>
           <ThemeProvider>
             {children}

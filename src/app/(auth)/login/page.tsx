@@ -50,13 +50,28 @@ function LoginPageInner() {
     setError(null);
     setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data: authData, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (error) {
-      setError(error.message);
+    if (error || !authData.user) {
+      setError(error?.message ?? "Sign in failed.");
+      setLoading(false);
+      return;
+    }
+
+    // Prevent super admins from using the regular customer portal.
+    // They must sign in through /admin/login.
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_super_admin")
+      .eq("user_id", authData.user.id)
+      .maybeSingle();
+
+    if (profile?.is_super_admin) {
+      await supabase.auth.signOut();
+      setError("Admin accounts must sign in via /admin/login.");
       setLoading(false);
       return;
     }

@@ -89,6 +89,12 @@ export interface AccountContext {
   role: AccountRole;
   /** Lightweight account meta — id + name. */
   account: { id: string; name: string };
+  /** Whether the user is a platform-wide super admin. */
+  isSuperAdmin: boolean;
+  /** Current subscription status of the account */
+  subscriptionStatus: "trial" | "active" | "inactive" | "expired";
+  /** Current subscription plan */
+  subscriptionPlan: string;
 }
 
 /**
@@ -114,6 +120,21 @@ export async function getCurrentAccount(): Promise<AccountContext> {
     throw new UnauthorizedError();
   }
 
+  // Safely check if the user is a super admin first.
+  let isSuperAdmin = false;
+  try {
+    const { data: adminData, error: adminErr } = await supabase
+      .from("profiles")
+      .select("is_super_admin")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (!adminErr && adminData?.is_super_admin) {
+      isSuperAdmin = true;
+    }
+  } catch {
+    // Column doesn't exist yet
+  }
+
   const { data, error } = await supabase
     .from("profiles")
     .select("account_id, account_role")
@@ -124,32 +145,29 @@ export async function getCurrentAccount(): Promise<AccountContext> {
     console.error("[getCurrentAccount] profile fetch error:", error);
     throw new ForbiddenError("Could not load account context");
   }
+  
   if (!data || !data.account_id || !data.account_role) {
-    // Pre-migration profile, or a manual insert that skipped the
-    // signup trigger. The user is authenticated but the app has
-    // no way to scope their queries — treat as forbidden.
+    if (isSuperAdmin) {
+      return {
+        supabase,
+        userId: user.id,
+        accountId: "super-admin",
+        role: "owner" as AccountRole,
+        account: { id: "super-admin", name: "Super Admin" },
+        isSuperAdmin: true,
+        subscriptionStatus: "active",
+        subscriptionPlan: "admin",
+      };
+    }
     throw new ForbiddenError("Profile is not linked to an account");
   }
   if (!isAccountRole(data.account_role)) {
-    // The DB enum should make this impossible, but a future
-    // migration that broadens the enum without updating TS would
-    // hit this — surface it rather than silently widening.
     throw new ForbiddenError(`Unknown account role: ${data.account_role}`);
   }
 
-  // Load the account with a plain point lookup by id rather than an
-  // embedded FK join (`account:accounts!inner(...)`). The embed forces
-  // PostgREST to resolve the profiles.account_id → accounts.id
-  // relationship from its schema cache; when that cache is stale — a
-  // common Supabase state right after a migration adds the FK, or when
-  // migrations are applied out of band — the embed fails hard with
-  // PGRST200 ("could not find a relationship … in the schema cache")
-  // and takes down the entire account context (issue #294). A lookup by
-  // id needs no relationship inference and is gated by the same accounts
-  // RLS, so it stays robust against cache staleness and older schemas.
   const { data: account, error: accountErr } = await supabase
     .from("accounts")
-    .select("id, name")
+    .select("id, name, subscription_status, subscription_plan")
     .eq("id", data.account_id)
     .maybeSingle();
 
@@ -158,8 +176,18 @@ export async function getCurrentAccount(): Promise<AccountContext> {
     throw new ForbiddenError("Could not load account context");
   }
   if (!account) {
-    // account_id points at no readable account row — orphaned profile
-    // or an RLS gap. Same "can't scope this user" outcome as above.
+    if (isSuperAdmin) {
+      return {
+        supabase,
+        userId: user.id,
+        accountId: "super-admin",
+        role: "owner" as AccountRole,
+        account: { id: "super-admin", name: "Super Admin" },
+        isSuperAdmin: true,
+        subscriptionStatus: "active",
+        subscriptionPlan: "admin",
+      };
+    }
     throw new ForbiddenError("Profile is not linked to an account");
   }
 
@@ -169,6 +197,9 @@ export async function getCurrentAccount(): Promise<AccountContext> {
     accountId: data.account_id,
     role: data.account_role,
     account: { id: account.id, name: account.name },
+    isSuperAdmin,
+    subscriptionStatus: account.subscription_status || "trial",
+    subscriptionPlan: account.subscription_plan || "free",
   };
 }
 
@@ -181,6 +212,19 @@ export async function getCurrentAccount(): Promise<AccountContext> {
  */
 export async function requireRole(min: AccountRole): Promise<AccountContext> {
   const ctx = await getCurrentAccount();
+  
+  // Super admins bypass all role and subscription checks
+  if (ctx.isSuperAdmin) {
+    return ctx;
+  }
+
+  // Block API access for inactive workspaces
+  if (ctx.subscriptionStatus === "inactive" || ctx.subscriptionStatus === "expired") {
+    throw new ForbiddenError(
+      `Workspace subscription is ${ctx.subscriptionStatus}. Access restricted.`,
+    );
+  }
+
   if (!hasMinRole(ctx.role, min)) {
     throw new ForbiddenError(
       `This action requires the '${min}' role or higher`,

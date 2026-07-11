@@ -97,13 +97,15 @@ describe("getCurrentAccount", () => {
       account: { id: "acct-1", name: "Acme" },
     });
 
-    // Two queries: profiles by user_id, then accounts by id. Neither
-    // selects an embedded relationship — the regression guard.
-    expect(calls.map((c) => c.table)).toEqual(["profiles", "accounts"]);
+    // Three queries: profiles to check is_super_admin, then profiles by user_id, 
+    // then accounts by id. None select an embedded relationship — the regression guard.
+    expect(calls.map((c) => c.table)).toEqual(["profiles", "profiles", "accounts"]);
     expect(calls[0].columns).not.toMatch(/accounts!/);
     expect(calls[0].eqArgs).toEqual([["user_id", "user-1"]]);
     expect(calls[1].columns).not.toMatch(/accounts!/);
-    expect(calls[1].eqArgs).toEqual([["id", "acct-1"]]);
+    expect(calls[1].eqArgs).toEqual([["user_id", "user-1"]]);
+    expect(calls[2].columns).not.toMatch(/accounts!/);
+    expect(calls[2].eqArgs).toEqual([["id", "acct-1"]]);
   });
 
   it("throws UnauthorizedError when there is no session", async () => {
