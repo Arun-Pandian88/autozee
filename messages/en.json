@@ -23,6 +23,7 @@
   "Sidebar": {
     "title": "Autozee",
     "dashboard": "Dashboard",
+    "billing": "Billing",
     "inbox": "Inbox",
     "notifications": "Notifications",
     "contacts": "Contacts",
@@ -31,6 +32,10 @@
     "automations": "Automations",
     "flows": "Flows",
     "aiAgents": "AI Agents",
+    "reports": "Reports",
+    "apiAccess": "API Keys",
+    "webhooks": "Webhooks",
+    "whiteLabel": "White Label",
     "settings": "Settings",
     "beta": "Beta",
     "unreadConversations": "{count} unread {count, plural, =1 {conversation} other {conversations}}",
@@ -364,10 +369,11 @@
         "notes": "Notes",
         "custom": "Custom Fields",
         "deals": "Deals",
+        "tags": "Tags"
+      },
       "noTags": "No tags",
       "noDeals": "No deals",
-      "addNotePlaceholder": "Add a note..."
-      },
+      "addNotePlaceholder": "Add a note...",
       "actions": {
         "edit": "Edit",
         "message": "Message",
@@ -827,6 +833,7 @@
       "backAria": "Back"
     },
     "builder": {
+      "delete": "Delete",
       "steps": {
         "send_message": "Send Message",
         "send_buttons": "Send Buttons",
@@ -1605,7 +1612,7 @@
       "nameLabel": "Name",
       "namePlaceholder": "e.g. Zapier automation",
       "scopesLabel": "Scopes",
-      "scopesHint": "A key with no scopes can still call <code className=\"text-[11px]\">GET /api/v1/me</code> to verify it works.",
+      "scopesHint": "A key with no scopes can still call <code>GET /api/v1/me</code> to verify it works.",
       "cancel": "Cancel",
       "creating": "Creating…",
       "createKey": "Create key",

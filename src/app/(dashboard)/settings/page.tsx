@@ -22,21 +22,69 @@ import {
   resolveSection,
   type SettingsSection,
 } from '@/components/settings/settings-sections';
+import {
+  isFeatureAvailableForPlan,
+  getMinimumPlanForFeature,
+  type FeatureKey,
+} from '@/lib/auth/features';
+import { UpgradeModal } from '@/components/ui/upgrade-modal';
+import { Lock } from 'lucide-react';
+import Link from 'next/link';
+import { useState } from 'react';
+
+const SECTION_FEATURES: Partial<Record<SettingsSection, FeatureKey>> = {
+  members: 'team_members',
+  api: 'api_access',
+};
+
+function LockedPanel({ featureName, requiredPlan }: { featureName: string; requiredPlan: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-2xl border border-border bg-card p-12 text-center shadow-sm">
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-500/10 mb-4">
+        <Lock className="h-6 w-6 text-orange-500" />
+      </div>
+      <h2 className="text-xl font-bold text-foreground">Upgrade Required</h2>
+      <p className="mt-2 max-w-sm text-sm text-muted-foreground">
+        {featureName} is available only in the {requiredPlan} Plan. Upgrade now to restore access and continue growing.
+      </p>
+      <Link href="/billing" className="mt-6 inline-flex h-10 items-center justify-center rounded-lg bg-primary px-6 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90">
+        Upgrade Now
+      </Link>
+    </div>
+  );
+}
 
 export default function SettingsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { defaultCurrency } = useAuth();
+  const { defaultCurrency, subscriptionPlan } = useAuth();
   const { mode } = useTheme();
   const t = useTranslations('Settings');
-
+  
   // The URL (`?tab=`) is the single source of truth for the active
   // section — deep-linkable, and it keeps the existing links in the
   // app sidebar/header working. Legacy tab values (tags, custom-fields)
   // resolve onto their new home; unknown/empty → the Overview landing.
   const section = resolveSection(searchParams.get('tab'));
 
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [upgradeFeature, setUpgradeFeature] = useState('');
+  const [upgradeRequiredPlan, setUpgradeRequiredPlan] = useState('');
+
+  const isTabLocked = (tab: SettingsSection) => {
+    const feature = SECTION_FEATURES[tab];
+    return feature ? !isFeatureAvailableForPlan(subscriptionPlan, feature) : false;
+  };
+
   const go = (next: SettingsSection) => {
+    if (isTabLocked(next)) {
+      const feature = SECTION_FEATURES[next]!;
+      const required = getMinimumPlanForFeature(feature);
+      setUpgradeFeature(t(`sections.${next}` as any));
+      setUpgradeRequiredPlan(required);
+      setUpgradeOpen(true);
+      return;
+    }
     const params = new URLSearchParams(searchParams.toString());
     params.set('tab', next);
     router.replace(`/settings?${params.toString()}`, { scroll: false });
@@ -53,6 +101,8 @@ export default function SettingsPage() {
     [mode, defaultCurrency],
   );
 
+  const isCurrentSectionLocked = isTabLocked(section);
+
   const panel: Record<SettingsSection, ReactNode> = {
     overview: <SettingsOverview onSelect={go} />,
     profile: <ProfileForm />,
@@ -63,8 +113,22 @@ export default function SettingsPage() {
     'quick-replies': <QuickRepliesManager />,
     fields: <FieldsAndTagsPanel />,
     deals: <DealsSettings />,
-    members: <MembersTab />,
-    api: <ApiKeysSettings />,
+    members: isCurrentSectionLocked ? (
+      <LockedPanel
+        featureName={t('sections.members')}
+        requiredPlan={getMinimumPlanForFeature(SECTION_FEATURES.members!)}
+      />
+    ) : (
+      <MembersTab />
+    ),
+    api: isCurrentSectionLocked ? (
+      <LockedPanel
+        featureName={t('sections.api')}
+        requiredPlan={getMinimumPlanForFeature(SECTION_FEATURES.api!)}
+      />
+    ) : (
+      <ApiKeysSettings />
+    ),
   };
 
   return (
@@ -82,6 +146,13 @@ export default function SettingsPage() {
         <SettingsRail active={section} onSelect={go} hints={hints} />
         <div className="min-w-0">{panel[section]}</div>
       </div>
+
+      <UpgradeModal
+        open={upgradeOpen}
+        onOpenChange={setUpgradeOpen}
+        featureName={upgradeFeature}
+        requiredPlan={upgradeRequiredPlan}
+      />
     </div>
   );
 }

@@ -1,12 +1,12 @@
 import { supabaseAdmin } from "@/lib/flows/admin-client";
-import { getCurrentAccount } from "@/lib/auth/account";
+import { getAdminAccount } from "@/lib/auth/account";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Settings — Autozee Admin" };
 
 export default async function AdminSettingsPage() {
-  const ctx = await getCurrentAccount().catch(() => null);
+  const ctx = await getAdminAccount().catch(() => null);
   if (!ctx?.isSuperAdmin) redirect("/admin/login");
 
   const { data: superAdmins } = await supabaseAdmin()

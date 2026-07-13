@@ -178,6 +178,10 @@ export async function POST(request: Request) {
     );
     if (!limit.success) return rateLimitResponse(limit);
 
+    // Plan limits check
+    const { requireLimit } = await import("@/lib/auth/limits");
+    await requireLimit("users");
+
     const body = (await request.json().catch(() => null)) as
       | { role?: unknown; expiresInDays?: unknown; label?: unknown }
       | null;
@@ -190,6 +194,21 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "'role' must be one of admin, agent, viewer" },
         { status: 400 },
+      );
+    }
+
+    // Enforce the spec's invite role matrix:
+    //   Owner  → can invite admin | agent | viewer
+    //   Manager (admin role) → can ONLY invite agent
+    //   Agent / Viewer → blocked by requireRole('admin') above
+    if (ctx.role === "admin" && role !== "agent") {
+      return NextResponse.json(
+        {
+          error:
+            "Managers can only invite team members with the Agent role. " +
+            "Ask the account Owner to invite a Manager.",
+        },
+        { status: 403 },
       );
     }
 

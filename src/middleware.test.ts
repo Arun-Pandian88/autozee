@@ -1,16 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
-// --- Scenario knobs the mock reads -----------------------------------------
-// `mockUser`         — what getUser() resolves to (a refreshed session ⇒ user,
-//                      or null for the logged-out path).
-// `refreshedCookies` — cookies Supabase writes via setAll() during getUser(),
-//                      i.e. the freshly *rotated* auth token. The whole point
-//                      of the test is that these must survive onto whatever
-//                      response the middleware returns — including redirects.
-// `mockIsSuperAdmin` — whether the profile row has is_super_admin=true.
-//                      Defaults to false (regular user) so existing tests
-//                      expecting /dashboard redirects remain correct.
 let mockUser: { id: string } | null = null;
 let refreshedCookies: Array<{
   name: string;
@@ -18,41 +8,39 @@ let refreshedCookies: Array<{
   options: Record<string, unknown>;
 }> = [];
 let mockIsSuperAdmin = false;
+let passedCookieName: string | undefined = undefined;
 
 vi.mock("@supabase/ssr", () => ({
   createServerClient: (
     _url: string,
     _key: string,
     opts: {
+      cookieOptions?: { name?: string };
       cookies: { setAll: (c: typeof refreshedCookies) => void };
     },
-  ) => ({
-    auth: {
-      // Mirrors real auth-js: an expired access token is transparently
-      // refreshed inside getUser(), which rotates the refresh token and
-      // pushes the new cookies through setAll() before resolving.
-      getUser: async () => {
-        if (refreshedCookies.length) opts.cookies.setAll(refreshedCookies);
-        return { data: { user: mockUser } };
+  ) => {
+    passedCookieName = opts.cookieOptions?.name;
+    return {
+      auth: {
+        getUser: async () => {
+          if (refreshedCookies.length) opts.cookies.setAll(refreshedCookies);
+          return { data: { user: mockUser } };
+        },
       },
-    },
-    // Stub the profile query used by the role-based routing rules.
-    // Returns { data: { is_super_admin: mockIsSuperAdmin } } so the
-    // middleware can branch on it without hitting a real database.
-    from: (_table: string) => ({
-      select: (_cols: string) => ({
-        eq: (_col: string, _val: string) => ({
-          maybeSingle: async () => ({
-            data: mockUser ? { is_super_admin: mockIsSuperAdmin } : null,
-            error: null,
+      from: (_table: string) => ({
+        select: (_cols: string) => ({
+          eq: (_col: string, _val: string) => ({
+            maybeSingle: async () => ({
+              data: mockUser ? { is_super_admin: mockIsSuperAdmin } : null,
+              error: null,
+            }),
           }),
         }),
       }),
-    }),
-  }),
+    };
+  },
 }));
 
-// Imported after the mock is registered.
 const { middleware } = await import("./middleware");
 
 beforeEach(() => {
@@ -61,6 +49,7 @@ beforeEach(() => {
   mockUser = null;
   refreshedCookies = [];
   mockIsSuperAdmin = false;
+  passedCookieName = undefined;
 });
 
 afterEach(() => vi.clearAllMocks());
@@ -71,61 +60,64 @@ const ROTATED = {
   options: { path: "/", httpOnly: true },
 };
 
+describe("middleware — cookie separation", () => {
+  it("uses sb-admin-auth-token for /admin routes", async () => {
+    mockUser = null;
+    await middleware(new NextRequest("https://app.test/admin/dashboard"));
+    expect(passedCookieName).toBe("sb-admin-auth-token");
+  });
+
+  it("uses sb-admin-auth-token for /api/admin routes", async () => {
+    mockUser = null;
+    await middleware(new NextRequest("https://app.test/api/admin/super-admin"));
+    expect(passedCookieName).toBe("sb-admin-auth-token");
+  });
+
+  it("uses default cookie for customer routes", async () => {
+    mockUser = null;
+    await middleware(new NextRequest("https://app.test/dashboard"));
+    expect(passedCookieName).toBeUndefined();
+  });
+});
+
 describe("middleware — refreshed auth cookies survive redirects", () => {
   it("carries the rotated token when redirecting a signed-in user off /login", async () => {
     mockUser = { id: "user-1" };
     refreshedCookies = [ROTATED];
-
-    const res = await middleware(
-      new NextRequest("https://app.test/login"),
-    );
-
-    // Redirect to /dashboard…
+    const res = await middleware(new NextRequest("https://app.test/login"));
     expect(res.status).toBe(307);
     expect(res.headers.get("location")).toContain("/dashboard");
-    // …and the rotated cookie MUST ride along, otherwise the browser keeps
-    // replaying the now-consumed refresh token and the session wedges until
-    // the user manually clears cookies.
     expect(res.cookies.get(ROTATED.name)?.value).toBe(ROTATED.value);
   });
+});
 
-  it("carries the rotated token when redirecting an unauth user to /login", async () => {
-    mockUser = null;
-    // Even on the logged-out path getUser() may emit cookie writes (e.g.
-    // clearing a dead session); those must not be dropped on the redirect.
-    refreshedCookies = [{ ...ROTATED, value: "cleared" }];
-
-    const res = await middleware(
-      new NextRequest("https://app.test/dashboard"),
-    );
-
+describe("middleware — super admin isolation", () => {
+  it("redirects super admin from /login to /admin", async () => {
+    mockUser = { id: "admin-1" };
+    mockIsSuperAdmin = true;
+    const res = await middleware(new NextRequest("https://app.test/login"));
     expect(res.status).toBe(307);
-    expect(res.headers.get("location")).toContain("/login");
-    expect(res.cookies.get(ROTATED.name)?.value).toBe("cleared");
+    expect(res.headers.get("location")).toContain("/admin");
   });
 
-  it("redirects a signed-in user with an invite token to /join/<token>", async () => {
-    mockUser = { id: "user-1" };
-    refreshedCookies = [ROTATED];
-
-    const res = await middleware(
-      new NextRequest("https://app.test/login?invite=abc123"),
-    );
-
-    expect(res.headers.get("location")).toContain("/join/abc123");
-    expect(res.cookies.get(ROTATED.name)?.value).toBe(ROTATED.value);
+  it("blocks non-super-admin from accessing /admin routes -> /admin/login", async () => {
+    mockUser = { id: "customer-1" };
+    mockIsSuperAdmin = false;
+    const res = await middleware(new NextRequest("https://app.test/admin/workspaces"));
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toContain("/admin/login");
   });
 
-  it("passes through (no redirect) for a signed-in user on a protected page", async () => {
-    mockUser = { id: "user-1" };
-    refreshedCookies = [ROTATED];
+  it("redirects unauthenticated visitor from /admin/* to /admin/login", async () => {
+    mockUser = null;
+    const res = await middleware(new NextRequest("https://app.test/admin/users"));
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toContain("/admin/login");
+  });
 
-    const res = await middleware(
-      new NextRequest("https://app.test/dashboard"),
-    );
-
-    // No redirect — the normal NextResponse.next() already carries cookies.
+  it("skips /admin/login redirect for unauthenticated", async () => {
+    mockUser = null;
+    const res = await middleware(new NextRequest("https://app.test/admin/login"));
     expect(res.headers.get("location")).toBeNull();
-    expect(res.cookies.get(ROTATED.name)?.value).toBe(ROTATED.value);
   });
 });

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getCurrentAccount } from "@/lib/auth/account";
+import { getAdminAccount } from "@/lib/auth/account";
 import { supabaseAdmin } from "@/lib/flows/admin-client";
 import type { Metadata } from "next";
 
@@ -36,7 +36,7 @@ function timeAgo(dateStr: string) {
 }
 
 export default async function AdminDashboardPage() {
-  const ctx = await getCurrentAccount().catch(() => null);
+  const ctx = await getAdminAccount().catch(() => null);
   if (!ctx?.isSuperAdmin) redirect("/admin/login");
 
   const admin = supabaseAdmin();

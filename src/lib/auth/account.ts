@@ -30,6 +30,15 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { createClient } from "@/lib/supabase/server";
 import { hasMinRole, isAccountRole, type AccountRole } from "./roles";
+import {
+  type FeatureKey,
+  getSubscriptionTier,
+  hasFeature,
+  getMinimumPlanForFeature,
+} from "./features";
+
+// Re-export requireWriteAccess here so API routes have a single import point.
+export { requireWriteAccess, requirePermission, hasPermission } from "./permissions";
 
 // ------------------------------------------------------------
 // Errors
@@ -91,10 +100,27 @@ export interface AccountContext {
   account: { id: string; name: string };
   /** Whether the user is a platform-wide super admin. */
   isSuperAdmin: boolean;
-  /** Current subscription status of the account */
-  subscriptionStatus: "trial" | "active" | "inactive" | "expired";
-  /** Current subscription plan */
+  /**
+   * Current subscription status of the account.
+   * State machine: trial → active | expired
+   *                active → past_due → active | expired
+   *                any    → cancelled (owner cancels)
+   * expired / cancelled = read-only; all writes are blocked.
+   */
+  subscriptionStatus:
+    | "trial"
+    | "active"
+    | "past_due"
+    | "expired"
+    | "cancelled"
+    | "inactive"; // legacy — treated as expired
+  /** Current subscription plan, e.g. "basic", "pro_monthly", "premium_yearly" */
   subscriptionPlan: string;
+  /**
+   * ISO timestamp when the trial ends. Only set for trial accounts.
+   * Use to render the trial countdown banner.
+   */
+  trialEndsAt: string | null;
 }
 
 /**
@@ -156,7 +182,8 @@ export async function getCurrentAccount(): Promise<AccountContext> {
         account: { id: "super-admin", name: "Super Admin" },
         isSuperAdmin: true,
         subscriptionStatus: "active",
-        subscriptionPlan: "admin",
+        subscriptionPlan: "premium",
+        trialEndsAt: null,
       };
     }
     throw new ForbiddenError("Profile is not linked to an account");
@@ -165,6 +192,9 @@ export async function getCurrentAccount(): Promise<AccountContext> {
     throw new ForbiddenError(`Unknown account role: ${data.account_role}`);
   }
 
+  // Fetch account using only stable columns (always exist post-017).
+  // trial_ends_at is fetched separately below so the code degrades
+  // gracefully until migration 040 is applied to the database.
   const { data: account, error: accountErr } = await supabase
     .from("accounts")
     .select("id, name, subscription_status, subscription_plan")
@@ -185,10 +215,25 @@ export async function getCurrentAccount(): Promise<AccountContext> {
         account: { id: "super-admin", name: "Super Admin" },
         isSuperAdmin: true,
         subscriptionStatus: "active",
-        subscriptionPlan: "admin",
+        subscriptionPlan: "premium",
+        trialEndsAt: null,
       };
     }
     throw new ForbiddenError("Profile is not linked to an account");
+  }
+
+  // Fetch trial_ends_at separately — column only exists after migration 040.
+  // If not yet migrated, this silently returns null (no breakage).
+  let trialEndsAt: string | null = null;
+  try {
+    const { data: trialData } = await supabase
+      .from("accounts")
+      .select("trial_ends_at")
+      .eq("id", data.account_id)
+      .maybeSingle();
+    trialEndsAt = trialData?.trial_ends_at ?? null;
+  } catch {
+    // Column doesn't exist yet (pre-040 schema) — treat as null.
   }
 
   return {
@@ -198,8 +243,9 @@ export async function getCurrentAccount(): Promise<AccountContext> {
     role: data.account_role,
     account: { id: account.id, name: account.name },
     isSuperAdmin,
-    subscriptionStatus: account.subscription_status || "trial",
-    subscriptionPlan: account.subscription_plan || "free",
+    subscriptionStatus: account.subscription_status ?? "trial",
+    subscriptionPlan: account.subscription_plan ?? "basic",
+    trialEndsAt,
   };
 }
 
@@ -218,12 +264,6 @@ export async function requireRole(min: AccountRole): Promise<AccountContext> {
     return ctx;
   }
 
-  // Block API access for inactive workspaces
-  if (ctx.subscriptionStatus === "inactive" || ctx.subscriptionStatus === "expired") {
-    throw new ForbiddenError(
-      `Workspace subscription is ${ctx.subscriptionStatus}. Access restricted.`,
-    );
-  }
 
   if (!hasMinRole(ctx.role, min)) {
     throw new ForbiddenError(
@@ -231,4 +271,101 @@ export async function requireRole(min: AccountRole): Promise<AccountContext> {
     );
   }
   return ctx;
+}
+
+/**
+ * Validates that the current account has access to a specific feature.
+ * Throws a ForbiddenError if the feature is not included in their tier.
+ * Super admins always bypass this check.
+ *
+ * SERVER-ONLY: This function calls getCurrentAccount() which uses next/headers.
+ * Import from '@/lib/auth/account', not '@/lib/auth/features'.
+ */
+export async function requireFeature(feature: FeatureKey): Promise<void> {
+  const ctx = await getCurrentAccount();
+
+  if (ctx.isSuperAdmin) {
+    return;
+  }
+
+  const tier = getSubscriptionTier(ctx.subscriptionPlan);
+
+  if (!hasFeature(tier, feature)) {
+    const minPlan = getMinimumPlanForFeature(feature);
+    throw new ForbiddenError(
+      `Feature '${feature}' is not available on your current plan (${tier.toUpperCase()}). Please upgrade to the ${minPlan} plan.`
+    );
+  }
+}
+
+
+/**
+ * Gets the current account context specifically for the admin portal.
+ * This reads the `sb-admin-auth-token` cookie via `createAdminClient()`.
+ * Throws if the user is not a super admin.
+ */
+export async function getAdminAccount(): Promise<AccountContext> {
+  const { createAdminClient } = await import("@/lib/supabase/server");
+  const supabase = await createAdminClient();
+
+  const {
+    data: { user },
+    error: userErr,
+  } = await supabase.auth.getUser();
+  if (userErr || !user) {
+    throw new UnauthorizedError();
+  }
+
+  // Verify they are a super admin
+  const { data: profile, error: profileErr } = await supabase
+    .from("profiles")
+    .select("is_super_admin, account_id, account_role")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (profileErr || !profile?.is_super_admin) {
+    throw new ForbiddenError("Super admin privileges required.");
+  }
+
+  const accountId = profile.account_id;
+  const role = profile.account_role as AccountRole;
+
+  if (!accountId) {
+    throw new ForbiddenError("Your profile is not linked to any workspace.");
+  }
+
+  const { data: accData, error: accErr } = await supabase
+    .from("accounts")
+    .select("name, subscription_status, subscription_plan")
+    .eq("id", accountId)
+    .maybeSingle();
+
+  if (accErr || !accData) {
+    throw new ForbiddenError("Workspace not found.");
+  }
+
+  // Fetch trial_ends_at separately — graceful fallback if column not yet migrated.
+  let adminTrialEndsAt: string | null = null;
+  try {
+    const { data: tData } = await supabase
+      .from("accounts")
+      .select("trial_ends_at")
+      .eq("id", accountId)
+      .maybeSingle();
+    adminTrialEndsAt = tData?.trial_ends_at ?? null;
+  } catch {
+    // Pre-040 schema — column doesn't exist yet.
+  }
+
+  return {
+    supabase,
+    userId: user.id,
+    accountId,
+    role,
+    account: { id: accountId, name: accData.name },
+    subscriptionStatus: accData.subscription_status,
+    subscriptionPlan: accData.subscription_plan,
+    trialEndsAt: adminTrialEndsAt,
+    isSuperAdmin: true,
+  };
 }

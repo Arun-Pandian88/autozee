@@ -380,6 +380,17 @@ export async function POST(request: Request) {
         )
       }
     } else {
+      // Enforce plan limits check for new WhatsApp numbers
+      const { requireLimit } = await import('@/lib/auth/limits');
+      try {
+        await requireLimit('whatsappNumbers');
+      } catch (err) {
+        return NextResponse.json(
+          { error: (err as Error).message },
+          { status: 403 }
+        );
+      }
+
       // Insert with both columns: `account_id` is the tenancy key
       // (NOT NULL post-017, UNIQUE so duplicates trip the constraint
       // up-front), `user_id` is the audit column identifying which

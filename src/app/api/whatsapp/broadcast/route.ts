@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { sendTemplateMessage } from '@/lib/whatsapp/meta-api'
 import { decrypt } from '@/lib/whatsapp/encryption'
-import { requireRole } from '@/lib/auth/account'
-import { requireFeature } from '@/lib/auth/features'
+import { requireFeature, getCurrentAccount } from '@/lib/auth/account'
 import type { SendTimeParams } from '@/lib/whatsapp/template-send-builder'
 import { isMessageTemplate } from '@/lib/whatsapp/template-row-guard'
 import {
@@ -62,7 +61,39 @@ interface NewRecipient {
 
 export async function POST(request: Request) {
   try {
+    // 1. Feature gate — broadcasts not available on Basic plan.
+    //    requireFeature throws ForbiddenError if the tier lacks 'broadcasts'.
     await requireFeature('broadcasts')
+
+    // 2. Subscription write-access guard — expired/cancelled = read-only.
+    const ctx = await getCurrentAccount().catch(() => null)
+    if (ctx) {
+      const { requireWriteAccess } = await import('@/lib/auth/permissions')
+      try {
+        requireWriteAccess(ctx)
+      } catch (writeErr) {
+        return NextResponse.json(
+          { error: (writeErr as Error).message },
+          { status: 403 },
+        )
+      }
+    }
+
+    // 3. Monthly message budget limit (0 on Basic = fully blocked by step 1;
+    //    10,000 on Pro; 40,000 on Premium).
+    try {
+      const { requireLimit } = await import('@/lib/auth/limits')
+      await requireLimit('broadcast_messages_per_month')
+    } catch (limitErr) {
+      if (limitErr && typeof limitErr === 'object' && 'upgrade' in limitErr) {
+        return NextResponse.json(
+          { error: (limitErr as unknown as { message: string }).message, upgrade: true },
+          { status: 403 },
+        )
+      }
+      throw limitErr
+    }
+
     const supabase = await createClient()
 
     const {

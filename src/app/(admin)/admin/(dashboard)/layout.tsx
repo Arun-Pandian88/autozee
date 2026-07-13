@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getCurrentAccount } from "@/lib/auth/account";
+import { getAdminAccount } from "@/lib/auth/account";
 import AdminSidebar from "./sidebar";
 
 export default async function AdminDashboardLayout({
@@ -7,7 +7,7 @@ export default async function AdminDashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const ctx = await getCurrentAccount().catch(() => null);
+  const ctx = await getAdminAccount().catch(() => null);
   if (!ctx?.isSuperAdmin) redirect("/admin/login");
 
   return (

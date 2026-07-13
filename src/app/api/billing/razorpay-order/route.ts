@@ -3,12 +3,18 @@ import { getCurrentAccount, UnauthorizedError, ForbiddenError } from "@/lib/auth
 import Razorpay from "razorpay";
 
 const PRICES_INR: Record<string, number> = {
-  basic_monthly: 499,
-  basic_yearly: 4790,
-  pro_monthly: 999,
-  pro_yearly: 9590,
-  premium_monthly: 2499,
-  premium_yearly: 23990,
+  // Monthly plans
+  basic_monthly:   499,
+  pro_monthly:     999,
+  premium_monthly: 4_999,
+  // Yearly plans (20% off)
+  basic_yearly:    4_790,
+  pro_yearly:      9_590,
+  premium_yearly:  47_990,
+  // Bare tier names (resolved as monthly when no cycle suffix)
+  basic:   499,
+  pro:     999,
+  premium: 4_999,
 };
 
 export async function POST(request: Request) {

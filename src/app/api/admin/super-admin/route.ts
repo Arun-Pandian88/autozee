@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { getCurrentAccount } from "@/lib/auth/account";
+import { getAdminAccount } from "@/lib/auth/account";
 import { supabaseAdmin } from "@/lib/flows/admin-client";
 
 export async function PATCH(request: Request) {
-  const ctx = await getCurrentAccount().catch(() => null);
+  const ctx = await getAdminAccount().catch(() => null);
   if (!ctx?.isSuperAdmin) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }

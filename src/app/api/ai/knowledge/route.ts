@@ -4,6 +4,7 @@ import {
   requireRole,
   toErrorResponse,
 } from '@/lib/auth/account'
+import { requireFeature } from '@/lib/auth/account'
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rate-limit'
 import { loadEmbeddingsKey } from '@/lib/ai/config'
 import { ingestDocument } from '@/lib/ai/knowledge'
@@ -16,6 +17,7 @@ import { AiError } from '@/lib/ai/types'
  */
 export async function GET() {
   try {
+    await requireFeature('ai_agents')
     const { supabase, accountId } = await getCurrentAccount()
     const { data, error } = await supabase
       .from('ai_knowledge_documents')
@@ -43,6 +45,7 @@ export async function GET() {
  */
 export async function POST(request: Request) {
   try {
+    await requireFeature('ai_agents')
     const { supabase, accountId, userId } = await requireRole('admin')
     const limit = checkRateLimit(`ai-kb:${userId}`, RATE_LIMITS.adminAction)
     if (!limit.success) return rateLimitResponse(limit)

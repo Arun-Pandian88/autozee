@@ -10,6 +10,17 @@ import {
   SETTINGS_SECTIONS,
   type SettingsSection,
 } from './settings-sections';
+import { useAuth } from '@/hooks/use-auth';
+import {
+  isFeatureAvailableForPlan,
+  type FeatureKey,
+} from '@/lib/auth/features';
+import { Lock } from 'lucide-react';
+
+const SECTION_FEATURES: Partial<Record<SettingsSection, FeatureKey>> = {
+  members: 'team_members',
+  api: 'api_access',
+};
 
 // Width at/above which the rail is a vertical column (already in view, so
 // no auto-scroll needed). Mirrors the Tailwind `lg:` breakpoint that
@@ -33,6 +44,7 @@ export function SettingsRail({
 }) {
   const t = useTranslations('Settings');
   const activeRef = useRef<HTMLButtonElement>(null);
+  const { subscriptionPlan } = useAuth();
 
   // When horizontal (mobile), keep the active chip in view. On desktop
   // the rail is a static column, so skip.
@@ -73,6 +85,9 @@ export function SettingsRail({
               const meta = SECTION_META[s];
               const Icon = meta.icon;
               const isActive = s === active;
+              const feature = SECTION_FEATURES[s];
+              const isLocked = feature ? !isFeatureAvailableForPlan(subscriptionPlan, feature) : false;
+
               return (
                 <button
                   key={s}
@@ -86,11 +101,15 @@ export function SettingsRail({
                     isActive
                       ? 'bg-primary-soft text-primary'
                       : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                    isLocked && 'opacity-70 hover:bg-transparent cursor-not-allowed',
                   )}
                 >
                   <Icon className="size-4 shrink-0" />
-                  <span className="flex-1">{t(`sections.${s}`)}</span>
-                  {hints?.[s] != null ? (
+                  <span className="flex-1 flex items-center gap-1">
+                    {t(`sections.${s}`)}
+                    {isLocked && <Lock className="size-3 text-muted-foreground/60" />}
+                  </span>
+                  {hints?.[s] != null && !isLocked ? (
                     <span
                       className={cn(
                         'hidden items-center gap-1.5 text-xs lg:inline-flex',

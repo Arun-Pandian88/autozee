@@ -4,6 +4,8 @@ import {
   requireRole,
   toErrorResponse,
 } from '@/lib/auth/account'
+import { requireFeature } from '@/lib/auth/account'
+import { getSubscriptionTier, hasFeature } from '@/lib/auth/features'
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rate-limit'
 import { encrypt, decrypt } from '@/lib/whatsapp/encryption'
 import { validateAiCredentials } from '@/lib/ai/validate'
@@ -23,7 +25,16 @@ function bad(message: string) {
  */
 export async function GET() {
   try {
-    const { supabase, accountId } = await getCurrentAccount()
+    const { supabase, accountId, subscriptionPlan, isSuperAdmin } = await getCurrentAccount()
+
+    // Gracefully return unconfigured instead of throwing a 403 so that
+    // background checks (e.g. inbox banner) don't log errors for Basic/Pro accounts.
+    if (!isSuperAdmin) {
+      const tier = getSubscriptionTier(subscriptionPlan)
+      if (!hasFeature(tier, 'ai_reply')) {
+        return NextResponse.json({ configured: false })
+      }
+    }
 
     const { data, error } = await supabase
       .from('ai_configs')
@@ -69,6 +80,7 @@ export async function GET() {
  */
 export async function POST(request: Request) {
   try {
+    await requireFeature('ai_reply')
     const { supabase, accountId, userId } = await requireRole('admin')
 
     const limit = checkRateLimit(`ai-config:${userId}`, RATE_LIMITS.adminAction)
@@ -257,6 +269,7 @@ export async function POST(request: Request) {
  */
 export async function DELETE() {
   try {
+    await requireFeature('ai_reply')
     const { supabase, accountId } = await requireRole('admin')
     const { error } = await supabase
       .from('ai_configs')

@@ -46,13 +46,32 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  // Creating a flow is a write — the RLS flows_insert policy requires
-  // `agent`, but this route inserts via the service-role client which
-  // bypasses RLS, so the role must be enforced here.
+  // Creating a flow requires agent+ role AND an active subscription AND
+  // the chatbot_flows plan limit must not be exceeded.
   try {
-    await requireRole('agent')
+    const ctx = await requireRole('agent');
+
+    // Block writes for expired / cancelled accounts
+    const { requireWriteAccess } = await import('@/lib/auth/permissions');
+    requireWriteAccess(ctx);
   } catch (err) {
-    return toErrorResponse(err)
+    return toErrorResponse(err);
+  }
+
+  // Enforce the chatbot_flows plan limit (Basic = 1 flow max).
+  // Returns a 403 with upgrade: true so the UI can show the upsell prompt.
+  try {
+    const { requireLimit } = await import('@/lib/auth/limits');
+    await requireLimit('chatbot_flows');
+  } catch (err) {
+    if (err && typeof err === 'object' && 'upgrade' in err) {
+      const limitErr = err as { message: string; upgrade: boolean };
+      return NextResponse.json(
+        { error: limitErr.message, upgrade: true },
+        { status: 403 },
+      );
+    }
+    return toErrorResponse(err);
   }
 
   const guard = await requireUser()

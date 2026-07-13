@@ -710,7 +710,7 @@ export function AutomationBuilder({ initial }: { initial: BuilderInitial }) {
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-background">
+    <div className="relative flex h-[calc(100vh-8rem)] min-h-[600px] flex-col overflow-hidden rounded-xl border border-border bg-background shadow-sm">
       {/* Top bar. At sub-sm widths the "Active" label is hidden and the
           switch moves to the right of the save button, so the name input
           gets maximum width. */}

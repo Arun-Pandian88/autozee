@@ -4,16 +4,24 @@ import { NextResponse, type NextRequest } from 'next/server'
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
+  const pathname = request.nextUrl.pathname
+
+  // We use completely separate cookies for the Admin and Customer portals.
+  // This guarantees physical isolation of the sessions.
+  const isAdminArea = pathname.startsWith('/admin') || pathname.startsWith('/api/admin')
+  const cookieName = isAdminArea ? 'sb-admin-auth-token' : undefined
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      ...(cookieName ? { cookieOptions: { name: cookieName } } : {}),
       cookies: {
         getAll() {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({ request })
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
@@ -25,16 +33,6 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // getUser() transparently refreshes an expired access token, which
-  // ROTATES the refresh token and writes the new cookies onto
-  // `supabaseResponse` via setAll() above. Any response we return in
-  // place of `supabaseResponse` (every redirect / JSON branch below)
-  // is a fresh object that does NOT carry those Set-Cookie headers, so
-  // the rotated token never reaches the browser. The next request then
-  // replays the old, now-consumed refresh token, the refresh fails, and
-  // the session wedges — the user gets a broken reload after idling and
-  // can only recover by manually clearing cookies (issue #288). Copy the
-  // refreshed cookies onto whatever response we hand back to fix that.
   const withRefreshedCookies = <T extends NextResponse>(response: T): T => {
     supabaseResponse.cookies.getAll().forEach((cookie) => {
       response.cookies.set(cookie)
@@ -42,51 +40,22 @@ export async function middleware(request: NextRequest) {
     return response
   }
 
-  const pathname = request.nextUrl.pathname
-
-  // ----------------------------------------------------------------
-  // Role-based route isolation
-  //
-  // Two completely separate login portals:
-  //   • /admin/login   → super admins only  → lands on /admin
-  //   • /login         → customers & owners → lands on /dashboard
-  //
-  // Rules enforced here (in priority order):
-  //
-  // 1. Unauthenticated visitors to any /admin/* page (except
-  //    /admin/login itself) → redirect to /admin/login
-  //
-  // 2. Authenticated super admin on /admin/login (already signed in)
-  //    → redirect to /admin (no need to log in again)
-  //
-  // 3. Authenticated NON-super-admin on /admin/login
-  //    → redirect to /login (wrong door; the page itself also signs
-  //    them out if they somehow arrive authenticated)
-  //
-  // 4. Authenticated NON-super-admin trying to access /admin/*
-  //    → redirect to /login (access denied)
-  //
-  // 5. Authenticated super admin trying to use /login, /signup, etc.
-  //    → redirect to /admin (they belong in the admin portal)
-  // ----------------------------------------------------------------
-
   const isAdminLoginPage = pathname === '/admin/login'
-  const isAdminArea = pathname.startsWith('/admin')
 
+  // ----------------------------------------------------------------
+  // Admin Portal Routing
+  // ----------------------------------------------------------------
   if (isAdminArea) {
     if (!isAdminLoginPage) {
-      // Rule 1 — unauthenticated user trying to access a protected admin page
       if (!user) {
+        // Unauthenticated visitor trying to access a protected admin page
         const url = request.nextUrl.clone()
         url.pathname = '/admin/login'
         url.search = ''
         return withRefreshedCookies(NextResponse.redirect(url))
       }
 
-      // Rules 3 & 4 — authenticated but may lack super admin privilege
-      // We fetch the profile to check is_super_admin. This is a single
-      // lightweight query on a primary-key column and only runs for
-      // /admin/* requests, so the overhead is acceptable.
+      // Defense in depth: Verify super admin status
       const { data: profile } = await supabase
         .from('profiles')
         .select('is_super_admin')
@@ -94,14 +63,14 @@ export async function middleware(request: NextRequest) {
         .maybeSingle()
 
       if (!profile?.is_super_admin) {
-        // Not a super admin — send them to the regular login page
+        // Somehow got an admin token but lacks privilege
         const url = request.nextUrl.clone()
-        url.pathname = '/login'
+        url.pathname = '/admin/login'
         url.search = ''
         return withRefreshedCookies(NextResponse.redirect(url))
       }
     } else {
-      // /admin/login — handle already-authenticated visitors
+      // /admin/login
       if (user) {
         const { data: profile } = await supabase
           .from('profiles')
@@ -110,33 +79,23 @@ export async function middleware(request: NextRequest) {
           .maybeSingle()
 
         if (profile?.is_super_admin) {
-          // Rule 2 — super admin already signed in, skip login page
           const url = request.nextUrl.clone()
           url.pathname = '/admin'
           url.search = ''
           return withRefreshedCookies(NextResponse.redirect(url))
         }
-
-        // Rule 3 — non-admin landed on /admin/login while authenticated
-        // Redirect to /login; the regular login page will handle them.
-        const url = request.nextUrl.clone()
-        url.pathname = '/login'
-        url.search = ''
-        return withRefreshedCookies(NextResponse.redirect(url))
+        // If not super admin, we let them render the login page,
+        // which will sign them out automatically.
       }
     }
+    
+    return supabaseResponse
   }
 
   // ----------------------------------------------------------------
-  // Regular auth pages — redirect to dashboard if already signed in.
-  // Exception: when an invite token is in the query string we
-  // send the already-signed-in user to /join/<token> instead so
-  // they can accept the invitation in one click. Without this,
-  // a forwarded invite link to someone who's already signed in
-  // would silently drop them on /dashboard.
-  //
-  // Rule 5 — if the user is a super admin, send them to /admin instead.
+  // Customer Portal Routing
   // ----------------------------------------------------------------
+
   if (user && (
     pathname === '/login' ||
     pathname === '/signup' ||
@@ -145,7 +104,7 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone()
     const inviteToken = request.nextUrl.searchParams.get('invite')
 
-    // Check if super admin — they should not be using the regular portal
+    // If a super admin somehow has a customer token, kick them to admin portal
     const { data: profile } = await supabase
       .from('profiles')
       .select('is_super_admin')
@@ -153,7 +112,6 @@ export async function middleware(request: NextRequest) {
       .maybeSingle()
 
     if (profile?.is_super_admin) {
-      // Rule 5 — super admin visiting the regular auth pages → /admin
       url.pathname = '/admin'
       url.search = ''
       return withRefreshedCookies(NextResponse.redirect(url))
@@ -172,19 +130,16 @@ export async function middleware(request: NextRequest) {
     return withRefreshedCookies(NextResponse.redirect(url))
   }
 
-  // Protected pages - customer area
   const protectedPaths = ['/dashboard', '/inbox', '/contacts', '/pipelines', '/broadcasts', '/automations', '/settings']
   const isProtectedPath = protectedPaths.some(path => pathname.startsWith(path))
 
   if (isProtectedPath) {
     if (!user) {
-      // Unauthenticated → redirect to /login
       const url = request.nextUrl.clone()
       url.pathname = '/login'
       return withRefreshedCookies(NextResponse.redirect(url))
     }
 
-    // Authenticated, check if super admin — they belong in the admin portal, not here.
     const { data: profile } = await supabase
       .from('profiles')
       .select('is_super_admin')
@@ -199,7 +154,6 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // API routes that need auth (not webhooks)
   if (!user && pathname.startsWith('/api/whatsapp/') &&
       !pathname.includes('/webhook')) {
     return withRefreshedCookies(

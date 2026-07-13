@@ -43,6 +43,8 @@ interface AccountSummary {
   /** Default deal currency (ISO-4217). NOT NULL DEFAULT 'USD' in the
    *  DB (migration 021); narrowed to DEFAULT_CURRENCY when absent. */
   default_currency: string;
+  subscription_plan: string | null;
+  subscription_status: string | null;
 }
 
 interface AuthContextValue {
@@ -88,6 +90,10 @@ interface AuthContextValue {
    *  while loading or when no account is resolved, so callers can use
    *  it unconditionally. */
   defaultCurrency: string;
+  /** Current subscription plan name (e.g. 'starter', 'growth', 'professional', 'trial'). */
+  subscriptionPlan: string | null;
+  /** Current subscription status (e.g. 'trial', 'active', 'inactive', 'expired'). */
+  subscriptionStatus: string | null;
   /** True if `accountRole === 'owner'`. */
   isOwner: boolean;
   /** True if `accountRole === 'admin'` (does NOT include owner — use canManageMembers for "admin or above"). */
@@ -171,7 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .from("accounts")
             // default_currency added in migration 021; narrowed to the
             // USD fallback below for older schemas where it reads null.
-            .select("id, name, default_currency")
+            .select("id, name, default_currency, subscription_plan, subscription_status")
             .eq("id", data.account_id)
             .maybeSingle();
           if (accountErr) {
@@ -186,6 +192,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               id: account.id,
               name: account.name,
               default_currency: account.default_currency ?? DEFAULT_CURRENCY,
+              subscription_plan: account.subscription_plan,
+              subscription_status: account.subscription_status,
             };
           }
         }
@@ -344,6 +352,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         refreshProfile,
         account,
         defaultCurrency: account?.default_currency ?? DEFAULT_CURRENCY,
+        subscriptionPlan: account?.subscription_plan ?? null,
+        subscriptionStatus: account?.subscription_status ?? null,
         ...derived,
       }}
     >
@@ -376,6 +386,8 @@ export function useAuth(): AuthContextValue {
       defaultCurrency: DEFAULT_CURRENCY,
       accountId: null,
       accountRole: null,
+      subscriptionPlan: null,
+      subscriptionStatus: null,
       isOwner: false,
       isAdmin: false,
       isAgent: false,
