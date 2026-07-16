@@ -2,6 +2,7 @@ import { supabaseAdmin } from "@/lib/flows/admin-client";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Analytics — Autozee Admin" };
+export const dynamic = "force-dynamic";
 
 const MONTHLY_PRICE = 999;   // ₹ per month
 const YEARLY_PRICE  = 9999;  // ₹ per year

@@ -3,6 +3,7 @@ import { SubscriptionControls, ExportButton } from "./subscription-controls";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Subscriptions — Autozee Admin" };
+export const dynamic = "force-dynamic";
 
 type Status = "trial" | "active" | "inactive" | "expired";
 type Plan   = "free" | "monthly" | "yearly";

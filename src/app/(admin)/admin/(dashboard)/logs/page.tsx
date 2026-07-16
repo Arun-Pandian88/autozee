@@ -2,6 +2,7 @@ import { supabaseAdmin } from "@/lib/flows/admin-client";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Activity Logs — Autozee Admin" };
+export const dynamic = "force-dynamic";
 
 export default async function LogsPage() {
   const admin = supabaseAdmin();

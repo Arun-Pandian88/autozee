@@ -3,6 +3,7 @@ import ToggleSuperAdmin from "./toggle-super-admin";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Users — Autozee Admin" };
+export const dynamic = "force-dynamic";
 
 export default async function UsersPage() {
   const admin = supabaseAdmin();

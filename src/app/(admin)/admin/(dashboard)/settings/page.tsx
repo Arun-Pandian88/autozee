@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Settings — Autozee Admin" };
+export const dynamic = "force-dynamic";
 
 export default async function AdminSettingsPage() {
   const ctx = await getAdminAccount().catch(() => null);
