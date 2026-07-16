@@ -15,7 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { UsersRound } from "lucide-react";
+import { MessageSquare, UsersRound } from "lucide-react";
 
 // `useSearchParams` opts the component out of static prerendering
 // unless it sits under a Suspense boundary. We split the form into
@@ -84,49 +84,34 @@ function LoginPageInner() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0B141A] px-4">
-      {/* Background ambient glow */}
-      <div className="absolute -top-[20%] -left-[10%] h-[50%] w-[50%] animate-pulse rounded-full bg-emerald-500/10 blur-[120px] duration-1000" />
-      <div className="absolute -bottom-[20%] -right-[10%] h-[50%] w-[50%] animate-pulse rounded-full bg-green-500/10 blur-[120px] duration-1000 delay-500" />
-      
-      <Card className="relative z-10 w-full max-w-md overflow-hidden border-white/5 bg-[#111B21]/90 backdrop-blur-xl shadow-2xl transition-all duration-300 hover:shadow-[#25D366]/5">
-        {/* Subtle top border gradient */}
-        <div className="absolute inset-x-0 top-0 h-[2px] w-full bg-gradient-to-r from-transparent via-[#25D366]/50 to-transparent" />
-        
-        <CardHeader className="items-center text-center pb-8 pt-10">
-          <div className="mb-4 flex flex-row items-center justify-center gap-3">
-             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#25D366] shadow-lg shadow-emerald-500/20 transition-transform duration-300 hover:scale-105">
-               {inviteToken ? (
-                 <UsersRound className="h-7 w-7 text-white" />
-               ) : (
-                 <svg className="h-8 w-8 text-white ml-0.5 mt-0.5" viewBox="0 0 24 24" fill="currentColor">
-                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.888-.788-1.489-1.761-1.663-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884" />
-                 </svg>
-               )}
-             </div>
-             <h1 className="text-3xl font-extrabold tracking-tight text-white">
-                Autozee.ai
-             </h1>
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <Card className="w-full max-w-sm">
+        <CardHeader className="text-center">
+          <div className="mx-auto mb-4 flex items-center justify-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary shadow-sm">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" fill="white"/>
+                <path d="M12 0C5.374 0 0 5.373 0 12c0 2.116.554 4.103 1.523 5.83L.057 23.215a.75.75 0 00.92.908l5.42-1.458A11.945 11.945 0 0012 24c6.626 0 12-5.373 12-12S18.626 0 12 0z" fill="white" fillOpacity="0.3"/>
+              </svg>
+            </div>
+            <span className="text-2xl font-bold tracking-tight">Autozee.ai</span>
           </div>
-          <CardTitle className="text-xl font-semibold text-white">
+          <CardTitle className="text-xl">
             {inviteToken ? t('titleAccept') : t('titleWelcome')}
           </CardTitle>
-          <CardDescription className="text-zinc-400">
+          <CardDescription>
             {inviteToken ? t('descAccept') : t('descWelcome')}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="flex flex-col gap-5">
+          <form onSubmit={handleLogin} className="flex flex-col gap-4">
             {error && (
-              <div className="animate-in fade-in slide-in-from-top-2 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-400 shadow-sm">
+              <div className="rounded-lg bg-destructive/15 p-3 text-sm text-destructive">
                 {error}
               </div>
             )}
-
-            <div className="flex flex-col gap-2.5">
-              <Label htmlFor="email" className="text-sm font-medium text-zinc-300">
-                {t('emailLabel')}
-              </Label>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="email">{t('emailLabel')}</Label>
               <Input
                 id="email"
                 type="email"
@@ -134,18 +119,14 @@ function LoginPageInner() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="h-11 border-white/10 bg-[#202C33] text-white placeholder:text-zinc-500 transition-all focus-visible:border-[#25D366] focus-visible:ring-[#25D366]/30"
               />
             </div>
-
-            <div className="flex flex-col gap-2.5">
+            <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-sm font-medium text-zinc-300">
-                  {t('passwordLabel')}
-                </Label>
+                <Label htmlFor="password">{t('passwordLabel')}</Label>
                 <Link
                   href="/forgot-password"
-                  className="text-sm font-medium text-[#25D366] transition-colors hover:text-[#25D366]/80 hover:underline"
+                  className="text-sm font-medium text-primary hover:underline"
                 >
                   {t('forgotPassword')}
                 </Link>
@@ -157,20 +138,13 @@ function LoginPageInner() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="h-11 border-white/10 bg-[#202C33] text-white placeholder:text-zinc-500 transition-all focus-visible:border-[#25D366] focus-visible:ring-[#25D366]/30"
               />
             </div>
-
-            <Button
-              type="submit"
-              disabled={loading}
-              className="mt-4 h-12 w-full bg-[#25D366] font-bold text-[#0B141A] shadow-lg shadow-[#25D366]/20 transition-all hover:bg-[#1DA851] hover:shadow-[#25D366]/40 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
-            >
+            <Button type="submit" disabled={loading} className="mt-2 w-full">
               {loading ? t('signingIn') : t('signIn')}
             </Button>
           </form>
-
-          <p className="mt-8 text-center text-sm font-medium text-zinc-400">
+          <p className="mt-6 text-center text-sm text-muted-foreground">
             {t('noAccount')}{" "}
             <Link
               href={
@@ -178,7 +152,7 @@ function LoginPageInner() {
                   ? `/signup?invite=${encodeURIComponent(inviteToken)}`
                   : "/signup"
               }
-              className="text-[#25D366] transition-colors hover:text-[#25D366]/80 hover:underline"
+              className="font-medium text-primary hover:underline"
             >
               {t('createAccount')}
             </Link>
