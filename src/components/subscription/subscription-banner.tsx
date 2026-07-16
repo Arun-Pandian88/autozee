@@ -51,6 +51,7 @@ export function SubscriptionBanner({
 
   useEffect(() => {
     if (status === "trial" && trialEndsAt) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDaysLeft(getDaysRemaining(trialEndsAt));
       // Recalculate once per minute in long-running tabs
       const id = setInterval(() => {

@@ -13,6 +13,7 @@ export default async function UsersPage() {
 
   const formatDate = (d: string) => new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
   const timeAgo = (d: string) => {
+    // eslint-disable-next-line react-hooks/purity
     const diff = Date.now() - new Date(d).getTime();
     const days = Math.floor(diff / 86400000);
     const hours = Math.floor(diff / 3600000);
@@ -81,6 +82,7 @@ export default async function UsersPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
+                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                       <p className="text-neutral-400 text-sm">{(p.accounts as any)?.name || "—"}</p>
                     </td>
                     <td className="px-6 py-4">

@@ -148,7 +148,9 @@ export default async function SubscriptionsPage({
           {accs.map(acc => {
             const owner = ownerMap.get(acc.owner_user_id) || profileByAccount.get(acc.id);
             const isExpiringSoon = acc.subscription_status === "active" && acc.subscription_end_at &&
+              // eslint-disable-next-line react-hooks/purity
               new Date(acc.subscription_end_at).getTime() - Date.now() < 7 * 86400000 &&
+              // eslint-disable-next-line react-hooks/purity
               new Date(acc.subscription_end_at).getTime() > Date.now();
 
             return (

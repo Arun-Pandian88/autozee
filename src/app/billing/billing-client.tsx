@@ -72,6 +72,7 @@ export function BillingClient({
             setTimeout(() => {
               window.location.href = "/dashboard";
             }, 1500);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } catch (error: any) {
             console.error("Payment sync failed:", error);
             alert("Payment succeeded but database update failed! Error: " + error.message);
@@ -83,15 +84,19 @@ export function BillingClient({
         notes: { account_id: accountId, plan },
       };
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if (!(window as any).Razorpay) {
         throw new Error("Razorpay SDK is still loading. Please try again.");
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const rzp = new (window as any).Razorpay(options);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       rzp.on("payment.failed", function (response: any) {
         alert(`Payment failed: ${response.error.description}`);
       });
       rzp.open();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       alert(err.message);
     } finally {

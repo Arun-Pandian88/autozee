@@ -29,7 +29,7 @@ export default function PrivacyPolicy() {
 
           <section>
             <h2 className="text-2xl font-bold mb-3 mt-8 text-slate-800 dark:text-slate-100">3. WhatsApp Data & Cloud API</h2>
-            <p>Zeenox integrates with the WhatsApp Cloud API. We act as a data processor for the messages you send and receive through our platform. We strictly adhere to Meta's data processing terms. We do not use your customer conversation data for advertising purposes or sell it to third parties.</p>
+            <p>Zeenox integrates with the WhatsApp Cloud API. We act as a data processor for the messages you send and receive through our platform. We strictly adhere to Meta&apos;s data processing terms. We do not use your customer conversation data for advertising purposes or sell it to third parties.</p>
           </section>
 
           <section>

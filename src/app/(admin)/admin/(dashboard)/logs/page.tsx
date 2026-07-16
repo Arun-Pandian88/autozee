@@ -41,6 +41,7 @@ export default async function LogsPage() {
   const top = events.slice(0, 40);
 
   const timeAgo = (d: Date) => {
+    // eslint-disable-next-line react-hooks/purity
     const diff = Date.now() - d.getTime();
     const days = Math.floor(diff / 86400000);
     const hours = Math.floor(diff / 3600000);

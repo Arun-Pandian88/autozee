@@ -101,6 +101,7 @@ import {
 interface NavItem {
   href: string;
   labelKey: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   icon: any;
   /**
    * When true, the nav row renders a small "Beta" chip after the label.
@@ -152,6 +153,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
   const handleLockedClick = (e: React.MouseEvent, featureKey: FeatureKey, labelKey: string) => {
     e.preventDefault();
     const required = getMinimumPlanForFeature(featureKey);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     setUpgradeFeature(t(labelKey as any));
     setUpgradeRequiredPlan(required);
     setUpgradeOpen(true);

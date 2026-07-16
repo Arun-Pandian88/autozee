@@ -23,7 +23,7 @@ export default function TermsOfService() {
 
           <section>
             <h2 className="text-2xl font-bold mb-3 mt-8 text-slate-800 dark:text-slate-100">3. User Responsibilities</h2>
-            <p>You are responsible for safeguarding the password that you use to access the Service and for any activities or actions under your password. You agree to use the Service in compliance with all applicable local, state, national, and international laws, rules and regulations, including Meta's WhatsApp Business Terms of Service.</p>
+            <p>You are responsible for safeguarding the password that you use to access the Service and for any activities or actions under your password. You agree to use the Service in compliance with all applicable local, state, national, and international laws, rules and regulations, including Meta&apos;s WhatsApp Business Terms of Service.</p>
           </section>
 
           <section>

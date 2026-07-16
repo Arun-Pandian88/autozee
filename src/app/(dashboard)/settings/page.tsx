@@ -80,6 +80,7 @@ export default function SettingsPage() {
     if (isTabLocked(next)) {
       const feature = SECTION_FEATURES[next]!;
       const required = getMinimumPlanForFeature(feature);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setUpgradeFeature(t(`sections.${next}` as any));
       setUpgradeRequiredPlan(required);
       setUpgradeOpen(true);

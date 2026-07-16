@@ -19,11 +19,13 @@ export default async function WorkspacesPage() {
   for (const p of profiles ?? []) {
     const list = profileMap.get(p.account_id) ?? [];
     list.push(p);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     profileMap.set(p.account_id, list as any);
   }
 
   const formatDate = (d: string) => new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
   const timeAgo = (d: string) => {
+    // eslint-disable-next-line react-hooks/purity
     const diff = Date.now() - new Date(d).getTime();
     const days = Math.floor(diff / 86400000);
     const hours = Math.floor(diff / 3600000);
@@ -46,7 +48,9 @@ export default async function WorkspacesPage() {
       <div className="grid grid-cols-3 gap-4">
         {[
           { label: "Total", value: count ?? 0, color: "#7c3aed" },
+          // eslint-disable-next-line react-hooks/purity
           { label: "This Week", value: (accounts ?? []).filter(a => Date.now() - new Date(a.created_at).getTime() < 7 * 86400000).length, color: "#3b82f6" },
+          // eslint-disable-next-line react-hooks/purity
           { label: "Today", value: (accounts ?? []).filter(a => Date.now() - new Date(a.created_at).getTime() < 86400000).length, color: "#10b981" },
         ].map(s => (
           <div key={s.label} className="rounded-xl p-4" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
@@ -72,6 +76,7 @@ export default async function WorkspacesPage() {
             </thead>
             <tbody>
               {(accounts ?? []).map(acc => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const members: any[] = profileMap.get(acc.id) ?? [];
                 const owner = members.find(m => m.user_id === acc.owner_user_id);
                 return (

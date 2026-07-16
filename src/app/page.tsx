@@ -139,7 +139,7 @@ export default function LandingPage() {
       {/* ─── NAV ─── */}
       <nav className={`lp-nav ${scrolled ? "lp-nav--scrolled" : ""}`}>
         <div className="lp-nav-inner">
-          <a href="/" className="lp-logo">
+          <Link href="/" className="lp-logo">
             <div className="lp-logo-mark">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" fill="white"/>
@@ -147,7 +147,7 @@ export default function LandingPage() {
               </svg>
             </div>
             <span className="lp-logo-name">Autozee.ai</span>
-          </a>
+          </Link>
 
           <div className="lp-nav-center">
             <a href="#features" className="lp-nav-link">Features</a>
@@ -308,7 +308,7 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <div className="hm-chat-msgs">
-                  <div className="hm-msg hm-msg--in">Hi! I'm interested in the Pro plan. What's included? 👋</div>
+                  <div className="hm-msg hm-msg--in">Hi! I&apos;m interested in the Pro plan. What&apos;s included? 👋</div>
                   <div className="hm-msg hm-msg--out">Hi Priya! Great choice — Pro is our most popular. You get unlimited flows, 10,000 broadcast messages, and 3 seats. Want a quick demo?</div>
                   <div className="hm-msg hm-msg--in">Yes please! When are you free?</div>
                   <div className="hm-typing"><span/><span/><span/></div>
@@ -434,7 +434,7 @@ export default function LandingPage() {
                 <div className="testi-stars">
                   {"★★★★★".split("").map((s,j)=><span key={j} className="testi-star">{s}</span>)}
                 </div>
-                <p className="testi-body">"{t.body}"</p>
+                <p className="testi-body">&quot;{t.body}&quot;</p>
                 <div className="testi-author">
                   <div className="testi-avatar">{t.avatar}</div>
                   <div>
@@ -524,7 +524,7 @@ export default function LandingPage() {
             <div className="price-enterprise-inner">
               <div>
                 <p className="price-enterprise-title">Need a custom plan?</p>
-                <p className="price-enterprise-sub">For agencies, franchises, or 100K+ contact databases — we'll build something tailored.</p>
+                <p className="price-enterprise-sub">For agencies, franchises, or 100K+ contact databases — we&apos;ll build something tailored.</p>
               </div>
               <a href="mailto:sales@autozee.ai" className="price-enterprise-cta">Talk to sales →</a>
             </div>
@@ -536,7 +536,7 @@ export default function LandingPage() {
       <section id="contact" className="lp-section">
         <div className="lp-section-inner">
           <div className="lp-eyebrow">Get in touch</div>
-          <h2 className="lp-h2">Have questions? Let's talk</h2>
+          <h2 className="lp-h2">Have questions? Let&apos;s talk</h2>
           <p className="lp-h2-sub">Fill out the form below or call us at <strong>+91 7603917369</strong> and our team will get back to you shortly.</p>
 
           <div className="contact-wrap">
@@ -600,7 +600,7 @@ export default function LandingPage() {
       <footer className="lp-footer">
         <div className="lp-footer-inner">
           <div className="lp-footer-brand">
-            <a href="/" className="lp-logo">
+            <Link href="/" className="lp-logo">
               <div className="lp-logo-mark">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" fill="white"/>
@@ -608,8 +608,8 @@ export default function LandingPage() {
                 </svg>
               </div>
               <span className="lp-logo-name">Autozee.ai</span>
-            </a>
-            <p className="lp-footer-tagline">The WhatsApp CRM built for India's growing businesses.</p>
+            </Link>
+            <p className="lp-footer-tagline">The WhatsApp CRM built for India&apos;s growing businesses.</p>
             <div className="lp-footer-meta-badge">Official Meta Business Partner</div>
           </div>
 

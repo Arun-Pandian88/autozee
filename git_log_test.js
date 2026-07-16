@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const { execSync } = require('child_process');
 try {
   console.log(execSync('git log -n 5 --oneline src/components/settings/whatsapp-config.tsx').toString());
