@@ -130,7 +130,7 @@ export function BillingClient({
       features: [
         { yes: true,  text: "Up to 5,000 contacts" },
         { yes: true,  text: "3 team seats" },
-        { yes: true,  text: "10,000 broadcast messages/month" },
+        { yes: true,  text: "1,000 broadcast messages/month" },
         { yes: true,  text: "Unlimited chatbot flows (multi-step, button menus)" },
         { yes: true,  text: "Drip / follow-up automation" },
         { yes: true,  text: "Keyword-based auto-tagging" },
@@ -150,7 +150,7 @@ export function BillingClient({
       features: [
         { yes: true,  text: "Up to 20,000 contacts" },
         { yes: true,  text: "10 team seats" },
-        { yes: true,  text: "40,000 broadcast messages/month" },
+        { yes: true,  text: "2,000 broadcast messages/month" },
         { yes: true,  text: "AI auto-reply (FAQ knowledge base)" },
         { yes: true,  text: "Lead scoring automation" },
         { yes: true,  text: "Multi-number bot routing (sales vs support)" },
@@ -203,10 +203,11 @@ export function BillingClient({
       {/* Plan cards */}
       <div className="grid lg:grid-cols-3 gap-6 w-full max-w-6xl">
         {plans.map((plan) => {
-          const price =
+          const basePrice =
             cycle === "monthly"
               ? PRICES_INR[plan.tier].monthly
               : PRICES_INR[plan.tier].yearly;
+          const price = Math.round(basePrice * 1.15);
           const isCurrentPlan = currentTier === plan.tier;
           const planKey = `${plan.tier}_${cycle}`;
 
@@ -258,6 +259,9 @@ export function BillingClient({
                     Save 20%
                   </span>
                 )}
+              </div>
+              <div className="text-xs text-neutral-500 mb-6 -mt-4">
+                Includes 15% markup fee
               </div>
 
               <ul className="mb-8 space-y-3 flex-1 text-sm">

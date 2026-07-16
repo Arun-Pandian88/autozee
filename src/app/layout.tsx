@@ -21,14 +21,36 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://autozee.ai"),
   title: {
-    default: "Autozee",
-    template: "%s — Autozee",
+    default: "Autozee.ai — Top WhatsApp CRM for Indian Businesses",
+    template: "%s — Autozee.ai",
   },
-  description: "Autozee — WhatsApp CRM",
+  description: "Autozee.ai is a powerful WhatsApp CRM for businesses. Automate conversations, send broadcasts, manage pipelines, and close more deals effortlessly.",
+  keywords: ["WhatsApp CRM", "WhatsApp Automation", "WhatsApp Business API", "CRM India", "Autozee", "WhatsApp Marketing"],
+  openGraph: {
+    title: "Autozee.ai — Top WhatsApp CRM",
+    description: "Automate conversations, send broadcasts, manage pipelines, and close more deals effortlessly.",
+    url: "https://autozee.ai",
+    siteName: "Autozee.ai",
+    locale: "en_IN",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Autozee.ai — Top WhatsApp CRM",
+    description: "Automate conversations, send broadcasts, manage pipelines, and close more deals effortlessly.",
+  },
   robots: {
-    index: false,
-    follow: false,
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
   icons: {
     icon: [{ url: "/icon" }],

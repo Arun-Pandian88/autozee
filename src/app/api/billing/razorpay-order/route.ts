@@ -26,7 +26,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid plan selected" }, { status: 400 });
     }
 
-    const amount = PRICES_INR[plan] * 100;
+    const baseAmount = PRICES_INR[plan];
+    const markupFee = baseAmount * 0.15;
+    const amount = Math.round((baseAmount + markupFee) * 100);
 
     const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
