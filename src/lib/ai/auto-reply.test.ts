@@ -82,6 +82,7 @@ function aiConfig(overrides: Partial<AiConfig> = {}): AiConfig {
 }
 
 beforeEach(() => {
+  vi.clearAllMocks()
   h.state.conv = {
     assigned_agent_id: null,
     ai_autoreply_disabled: false,
