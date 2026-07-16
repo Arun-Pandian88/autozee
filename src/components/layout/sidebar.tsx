@@ -79,7 +79,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  BarChart3,
   KeyRound,
   PlugZap,
   Lock,
@@ -121,7 +120,6 @@ const navItems: NavItem[] = [
   { href: "/automations", labelKey: "automations", icon: Zap },
   { href: "/flows", labelKey: "flows", icon: Workflow, beta: true, featureKey: "flow_builder" },
   { href: "/agents", labelKey: "aiAgents", icon: Bot, featureKey: "ai_agents" },
-  { href: "/reports", labelKey: "reports", icon: BarChart3, featureKey: "reports" },
   { href: "/settings?tab=api", labelKey: "apiAccess", icon: KeyRound, featureKey: "api_access" },
   { href: "/settings?tab=whatsapp", labelKey: "webhooks", icon: PlugZap, featureKey: "webhooks" },
 ];
