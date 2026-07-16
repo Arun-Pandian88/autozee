@@ -141,7 +141,7 @@ export default function FlowRunsPage() {
     return () => {
       cancelled = true;
     };
-  }, [params.id]);
+  }, [params.id, t, tEdit]);
 
   function toggle(runId: string) {
     setExpanded((prev) => {

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useTheme } from "@/hooks/use-theme";
 import { 
   MessageSquare, Bot, Kanban, Megaphone, Users, Zap,

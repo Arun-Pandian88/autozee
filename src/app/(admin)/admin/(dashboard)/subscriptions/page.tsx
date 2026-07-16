@@ -34,7 +34,7 @@ export default async function SubscriptionsPage({
 
   const admin = supabaseAdmin();
 
-  const [{ data: accounts, count }, { data: profiles }] = await Promise.all([
+  const [{ data: accounts }, { data: profiles }] = await Promise.all([
     admin.from("accounts").select("*", { count: "exact" }).order("created_at", { ascending: false }),
     admin.from("profiles").select("user_id, full_name, email, account_id"),
   ]);

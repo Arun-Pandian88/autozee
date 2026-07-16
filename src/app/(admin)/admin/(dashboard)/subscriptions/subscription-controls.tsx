@@ -68,7 +68,7 @@ export function SubscriptionControls({
   currentNotes?: string | null;
 }) {
   const [status, setStatus]     = useState<Status>(currentStatus);
-  const [plan, setPlan]         = useState<Plan>(currentPlan);
+  const [, setPlan]             = useState<Plan>(currentPlan);
   const [customDays, setCustomDays] = useState("30");
   const [notes, setNotes]       = useState(currentNotes ?? "");
   const [showExtend, setShowExtend] = useState(false);

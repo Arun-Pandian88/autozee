@@ -1,5 +1,5 @@
 import { supabaseAdmin } from "@/lib/flows/admin-client";
-import { Building2, Users, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Workspaces — Autozee Admin" };

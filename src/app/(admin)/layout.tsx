@@ -1,4 +1,3 @@
-import { getAdminAccount } from "@/lib/auth/account";
 import { redirect } from "next/navigation";
 
 export default async function AdminLayout({

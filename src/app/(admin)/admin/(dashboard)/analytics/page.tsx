@@ -143,7 +143,7 @@ export default async function AnalyticsPage() {
 
   const monthly6 = buildMonthlyGrowth(accs);
   const signupData = monthly6.map(m => m.count);
-  const revenueData = monthly6.map(m => m.revenue);
+
 
   const expiringIn7 = accs.filter(a => {
     if (a.subscription_status !== "active" || !a.subscription_end_at) return false;
