@@ -45,7 +45,25 @@ export function BillingClient({
 
       if (!res.ok) throw new Error(data.error || "Failed to create order");
 
-      const { order } = data;
+      const { order, devMock } = data;
+
+      // ── Dev mock: no real Razorpay popup needed ───────────────────────
+      // When RAZORPAY_DEV_MOCK=true the server returns a fake order.
+      // We skip the payment UI and go straight to sync-dev to update the DB.
+      if (devMock) {
+        const syncRes = await fetch("/api/billing/sync-dev", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan }),
+        });
+        if (!syncRes.ok) {
+          const errorText = await syncRes.text();
+          throw new Error(`Dev sync failed: ${syncRes.status} - ${errorText}`);
+        }
+        console.log("[billing] DEV MOCK: plan synced →", plan);
+        setTimeout(() => { window.location.href = "/dashboard"; }, 1000);
+        return;
+      }
 
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
@@ -54,21 +72,32 @@ export function BillingClient({
         name: "Autozee",
         description: `${tier.charAt(0).toUpperCase() + tier.slice(1)} — ${cycle.charAt(0).toUpperCase() + cycle.slice(1)} subscription`,
         order_id: order.id,
-        handler: async function() {
+        handler: async function(response: {
+          razorpay_order_id: string;
+          razorpay_payment_id: string;
+          razorpay_signature: string;
+        }) {
           try {
-            if (process.env.NODE_ENV === "development") {
-              const res = await fetch("/api/billing/sync-dev", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ plan })
-              });
-              if (!res.ok) {
-                const errorText = await res.text();
-                throw new Error(`Sync failed: ${res.status} - ${errorText}`);
-              }
+            // Always verify payment server-side and update DB immediately.
+            // Works in both development and production — does NOT rely solely
+            // on the async Razorpay webhook arriving.
+            const verifyRes = await fetch("/api/billing/verify-payment", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                plan,
+              }),
+            });
+
+            if (!verifyRes.ok) {
+              const errorData = await verifyRes.json().catch(() => ({ error: verifyRes.statusText }));
+              throw new Error(`Payment verification failed: ${errorData.error}`);
             }
 
-            // Give local sync a moment before redirect
+            // Brief pause so user sees success, then redirect to dashboard
             setTimeout(() => {
               window.location.href = "/dashboard";
             }, 1500);

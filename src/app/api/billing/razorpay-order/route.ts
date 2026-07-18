@@ -34,7 +34,8 @@ export async function POST(request: Request) {
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
     const isConfigured =
-      keyId && keySecret &&
+      keyId &&
+      keySecret &&
       !keyId.includes("dummy") && !keySecret.includes("dummy") &&
       keyId.startsWith("rzp_");
 
@@ -43,6 +44,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Billing is not configured on this server." }, { status: 503 });
     }
 
+    // ── DEV mock: skip real Razorpay API call ─────────────────────────────
+    // Set RAZORPAY_DEV_MOCK=true in .env.local to bypass the network call
+    // when you don't have valid test credentials. The billing-client will
+    // detect the devMock flag and use sync-dev for the DB update instead.
+    if (process.env.NODE_ENV === "development" && process.env.RAZORPAY_DEV_MOCK === "true") {
+      const mockOrder = {
+        id: `order_DEV_${Date.now()}`,
+        amount,
+        currency: "INR",
+        receipt: `r_${ctx.accountId.split("-")[0]}_${Date.now()}`,
+        notes: { account_id: ctx.accountId, plan },
+      };
+      console.log("[razorpay-order] DEV MOCK order:", mockOrder.id, "plan:", plan);
+      return NextResponse.json({ order: mockOrder, devMock: true });
+    }
+
+    // ── Real Razorpay API call ─────────────────────────────────────────────
     const razorpay = new Razorpay({
       key_id: keyId,
       key_secret: keySecret,
@@ -63,7 +81,16 @@ export async function POST(request: Request) {
     if (err instanceof UnauthorizedError || err instanceof ForbiddenError) {
       return NextResponse.json({ error: err.message }, { status: err.status });
     }
-    console.error("[razorpay-order] error:", err);
-    return NextResponse.json({ error: "Failed to create order" }, { status: 500 });
+    // Log full Razorpay error details for easier debugging
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const e = err as any;
+    console.error("[razorpay-order] error:", {
+      statusCode: e?.statusCode,
+      error: e?.error,
+      message: e?.message,
+      description: e?.error?.description,
+    });
+    const description = e?.error?.description || e?.message || "Failed to create order";
+    return NextResponse.json({ error: description }, { status: 500 });
   }
 }
