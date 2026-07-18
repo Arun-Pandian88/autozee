@@ -10,36 +10,52 @@ import {
 import { WhatsAppWidget } from "@/components/ui/whatsapp-widget";
 
 /* ─── data ─────────────────────────────────────────── */
+// Base prices (INR) — same as billing dashboard (PRICES_INR in billing-client.tsx)
+// Final price = base * 1.15 (15% markup/GST included)
+const PRICES_BASE = {
+  basic:   { monthly: 499,   yearly: 4_790  },
+  pro:     { monthly: 999,   yearly: 9_590  },
+  premium: { monthly: 4_999, yearly: 47_990 },
+};
+
 const PLANS = [
   {
     name: "Basic",
-    desc: "Solo operators & small shops getting started on WhatsApp.",
-    monthly: 499, yearly: 399,
+    tier: "basic",
+    desc: "Essential WhatsApp tools for solo operators.",
+    // monthly price with 15% markup
+    monthly: Math.round(PRICES_BASE.basic.monthly * 1.15),
+    // yearly total with 15% markup (billed annually)
+    yearly: Math.round(PRICES_BASE.basic.yearly * 1.15),
+    yearlyPerMonth: Math.round(Math.round(PRICES_BASE.basic.yearly * 1.15) / 12),
     highlight: false, badge: null,
     features: [
       "Unlimited contacts",
-      "1 WhatsApp number",
+      "Shared inbox (1 seat)",
       "1 chatbot flow (keyword-based)",
       "Business-hours auto-reply",
       "Welcome message automation",
-      "Analytics dashboard",
+      "Fixed FAQ auto-reply (5–10 Q&A)",
     ],
-    notIncluded: ["Broadcasts", "Drip automation", "AI auto-reply"],
+    notIncluded: ["Broadcasts", "Drip / follow-up automation", "Unlimited chatbot flows", "AI auto-reply"],
     cta: "Start free trial",
   },
   {
     name: "Pro",
-    desc: "Growing teams that automate the full customer journey.",
-    monthly: 999, yearly: 799,
+    tier: "pro",
+    desc: "For growing teams that automate customer journeys.",
+    monthly: Math.round(PRICES_BASE.pro.monthly * 1.15),
+    yearly: Math.round(PRICES_BASE.pro.yearly * 1.15),
+    yearlyPerMonth: Math.round(Math.round(PRICES_BASE.pro.yearly * 1.15) / 12),
     highlight: true, badge: "Most popular",
     features: [
       "Up to 5,000 contacts",
-      "3 WhatsApp numbers",
       "3 team seats",
-      "Unlimited chatbot flows (multi-step)",
-      "10,000 broadcast messages / month",
-      "Drip & follow-up automation",
-      "Keyword auto-tagging",
+      "1,000 broadcast messages / month",
+      "Unlimited chatbot flows (multi-step, button menus)",
+      "Drip / follow-up automation",
+      "Keyword-based auto-tagging",
+      "Abandoned-inquiry recovery",
       "Everything in Basic",
     ],
     notIncluded: ["AI auto-reply", "Lead scoring"],
@@ -47,20 +63,23 @@ const PLANS = [
   },
   {
     name: "Premium",
-    desc: "High-volume businesses that need AI-powered growth.",
-    monthly: 4999, yearly: 3999,
+    tier: "premium",
+    desc: "AI-powered growth for high-volume businesses.",
+    monthly: Math.round(PRICES_BASE.premium.monthly * 1.15),
+    yearly: Math.round(PRICES_BASE.premium.yearly * 1.15),
+    yearlyPerMonth: Math.round(Math.round(PRICES_BASE.premium.yearly * 1.15) / 12),
     highlight: false, badge: null,
     features: [
       "Up to 20,000 contacts",
-      "Unlimited WhatsApp numbers",
       "10 team seats",
-      "40,000 broadcast messages / month",
+      "2,000 broadcast messages / month",
       "AI auto-reply (FAQ knowledge base)",
       "Lead scoring automation",
-      "Multi-number routing",
+      "Multi-number bot routing (sales vs support)",
+      "Festival / birthday auto-campaigns",
       "Click-to-WhatsApp Ads automation",
-      "Priority 24/7 support",
       "Everything in Pro",
+      "Priority 24/7 support",
     ],
     notIncluded: [],
     cta: "Start free trial",
@@ -475,7 +494,7 @@ export default function LandingPage() {
 
           <div className="price-grid">
             {PLANS.map(plan => {
-              const price = yearly ? plan.yearly : plan.monthly;
+              const displayPrice = yearly ? plan.yearlyPerMonth : plan.monthly;
               return (
                 <div key={plan.name} className={`price-card ${plan.highlight?"price-card--hl":""}`}>
                   {plan.highlight && <div className="price-card-glow" aria-hidden="true"/>}
@@ -486,14 +505,15 @@ export default function LandingPage() {
                     <div className="price-desc">{plan.desc}</div>
                     <div className="price-amount-row">
                       <span className="price-currency">₹</span>
-                      <span className="price-amount">{price.toLocaleString("en-IN")}</span>
+                      <span className="price-amount">{displayPrice.toLocaleString("en-IN")}</span>
                       <span className="price-per">/mo</span>
                     </div>
                     {yearly && (
                       <div className="price-yearly-note">
-                        Billed ₹{(price*12).toLocaleString("en-IN")} annually — save ₹{((plan.monthly - plan.yearly)*12).toLocaleString("en-IN")}
+                        Billed ₹{plan.yearly.toLocaleString("en-IN")} annually — save 20%
                       </div>
                     )}
+                    <div className="price-tax-note">Incl. 15% GST</div>
                   </div>
 
                   <ul className="price-feats">
@@ -1309,6 +1329,7 @@ export default function LandingPage() {
         .price-amount { font-size: 3rem; font-weight: 900; color: var(--lp-fg-strong); letter-spacing: -0.06em; line-height: 1; transition: all 0.25s ease; }
         .price-per { font-size: 0.8rem; color: var(--lp-muted); margin-left: 0.3rem; line-height: 2.5; }
         .price-yearly-note { font-size: 0.72rem; color: #34d399; margin-top: 0.5rem; font-weight: 600; }
+        .price-tax-note { font-size: 0.68rem; color: var(--lp-muted); margin-top: 0.35rem; }
         .price-feats { list-style: none; flex: 1; display: flex; flex-direction: column; gap: 0.65rem; margin-bottom: 1.85rem; position: relative; z-index: 1; }
         .price-feat { display: flex; align-items: flex-start; gap: 0.55rem; font-size: 0.84rem; color: var(--lp-fg); line-height: 1.4; }
         .price-feat--no { color: var(--lp-muted); }
