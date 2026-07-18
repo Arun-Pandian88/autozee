@@ -11,7 +11,7 @@ import { WhatsAppWidget } from "@/components/ui/whatsapp-widget";
 
 /* ─── data ─────────────────────────────────────────── */
 // Base prices (INR) — same as billing dashboard (PRICES_INR in billing-client.tsx)
-// Final price = base * 1.15 (15% markup/GST included)
+// Final price = base * 1.15 (15% markup included)
 const PRICES_BASE = {
   basic:   { monthly: 499,   yearly: 4_790  },
   pro:     { monthly: 999,   yearly: 9_590  },
@@ -513,7 +513,7 @@ export default function LandingPage() {
                         Billed ₹{plan.yearly.toLocaleString("en-IN")} annually — save 20%
                       </div>
                     )}
-                    <div className="price-tax-note">Incl. 15% GST</div>
+                    <div className="price-tax-note">Incl. 15% Markup</div>
                   </div>
 
                   <ul className="price-feats">
