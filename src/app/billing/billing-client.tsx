@@ -142,7 +142,7 @@ export function BillingClient({
       border: "rgba(255,255,255,0.1)",
       featured: false,
       features: [
-        { yes: true,  text: "Unlimited contacts" },
+        { yes: true,  text: "Up to 1,000 contacts" },
         { yes: true,  text: "Shared inbox (1 seat)" },
         { yes: true,  text: "1 chatbot flow (keyword-based)" },
         { yes: true,  text: "Business-hours auto-reply" },
@@ -182,7 +182,7 @@ export function BillingClient({
       border: "rgba(255,255,255,0.1)",
       featured: false,
       features: [
-        { yes: true,  text: "Up to 20,000 contacts" },
+        { yes: true,  text: "Up to 10,000 contacts" },
         { yes: true,  text: "10 team seats" },
         { yes: true,  text: "2,000 broadcast messages/month" },
         { yes: true,  text: "AI auto-reply (FAQ knowledge base)" },
