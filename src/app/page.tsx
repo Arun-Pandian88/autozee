@@ -30,7 +30,7 @@ const PLANS = [
     yearlyPerMonth: Math.round(Math.round(PRICES_BASE.basic.yearly * 1.15) / 12),
     highlight: false, badge: null,
     features: [
-      "Unlimited contacts",
+      "Up to 1,000 contacts",
       "Shared inbox (1 seat)",
       "1 chatbot flow (keyword-based)",
       "Business-hours auto-reply",
@@ -70,7 +70,7 @@ const PLANS = [
     yearlyPerMonth: Math.round(Math.round(PRICES_BASE.premium.yearly * 1.15) / 12),
     highlight: false, badge: null,
     features: [
-      "Up to 20,000 contacts",
+      "Up to 10,000 contacts",
       "10 team seats",
       "2,000 broadcast messages / month",
       "AI auto-reply (FAQ knowledge base)",

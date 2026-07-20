@@ -48,7 +48,7 @@ export const PLAN_LIMITS: Record<SubscriptionTier, PlanLimits> = {
   basic: {
     users: 1,
     whatsappNumbers: 1,
-    contacts: UNLIMITED,       // unlimited contacts per spec
+    contacts: 1_000,              // 1,000 contacts on Basic plan
     chatbot_flows: 1,          // THE key upsell limit for Basic
     broadcast_messages_per_month: 0,  // 0 = broadcasts blocked entirely
     storageGb: 5,
@@ -74,7 +74,7 @@ export const PLAN_LIMITS: Record<SubscriptionTier, PlanLimits> = {
   premium: {
     users: 10,
     whatsappNumbers: UNLIMITED,
-    contacts: 20_000,
+    contacts: 10_000,
     chatbot_flows: UNLIMITED,
     broadcast_messages_per_month: 40_000,
     storageGb: UNLIMITED,
