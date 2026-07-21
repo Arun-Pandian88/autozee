@@ -107,7 +107,6 @@ const FEATURES = [
 ];
 
 const METRICS = [
-  { value: "6", label: "Active businesses" },
   { value: "12,500+", label: "Conversations automated" },
   { value: "99.9%", label: "Uptime SLA" },
   { value: "< 5 min", label: "Avg response time" },
@@ -231,7 +230,7 @@ export default function LandingPage() {
               ))}
             </div>
             <div>
-              <p className="hero-trust-main"><strong>6</strong> businesses trust Autozee</p>
+              <p className="hero-trust-main">Businesses <strong>trust</strong> Autozee</p>
               <div className="hero-stars-row">
                 {"★★★★★".split("").map((s,i) => <span key={i} style={{color:"#fbbf24",fontSize:"0.75rem"}}>{s}</span>)}
                 <span className="hero-trust-rating">4.9 / 5</span>
@@ -445,7 +444,7 @@ export default function LandingPage() {
       <section id="testimonials" className="lp-section">
         <div className="lp-section-inner">
           <div className="lp-eyebrow">Customer stories</div>
-          <h2 className="lp-h2">Loved by 6 businesses</h2>
+          <h2 className="lp-h2">Loved by our customers</h2>
 
           <div className="testi-grid">
             {TESTIMONIALS.map((t,i)=>(
@@ -599,7 +598,7 @@ export default function LandingPage() {
             <span className="hero-gradient">closing deals on WhatsApp</span>
           </h2>
           <p className="final-cta-sub">
-            Join 6 businesses using Autozee to convert every WhatsApp conversation into revenue. Takes 30 minutes to set up.
+            Join businesses using Autozee to convert every WhatsApp conversation into revenue. Takes 30 minutes to set up.
           </p>
           <div className="final-cta-actions">
             <Link href="/login" className="hero-cta-primary hero-cta-primary--xl">
